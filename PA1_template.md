@@ -9,30 +9,6 @@ output:
 ```r
 #Loading
 data<-read.csv('activity.csv',header = T,colClasses = c('numeric','Date','character'))
-
-#Preprocessing
-interval_type1<- nchar(data$interval) %in% c(1,2)
-interval_type2<- nchar(data$interval)== 3
-interval_type3<- nchar(data$interval)==4
-
-for (i in seq_along(data$interval)){
-  if (interval_type1[i] == TRUE) {
-    data$m_interval[i]<- paste('0',data$interval[i],sep =':' )
-    
-  }else if(interval_type2[i] == TRUE){
-    split_interval<- strsplit(data$interval[i],split = '')
-    i_min<- paste(split_interval[[1]][2],split_interval[[1]][3],sep ='' )
-    i_hour<-split_interval[[1]][1]
-    data$m_interval[i]<- paste(i_hour,i_min,sep =':' )
-  }else if(interval_type3[i] == TRUE){
-    split_interval<- strsplit(data$interval[i],split = '')
-    i_min<- paste(split_interval[[1]][3],split_interval[[1]][4],sep ='' )
-    i_hour<-paste(split_interval[[1]][1],split_interval[[1]][2],sep ='' )
-    data$m_interval[i]<- paste(i_hour,i_min,sep =':' )
-  }
-}
-
-data$date_time<- strftime(paste(data$date,data$m_interval,sep =' ' ),'%Y-%m-%d %H:%M')
 ```
 
 ## What is mean total number of steps taken per day?
@@ -149,7 +125,7 @@ merge_data  = merge(data,int_mean)
 # filling missing values
 merge_data$steps[which(is.na(merge_data$steps))] = round(merge_data$means[which(is.na(merge_data$steps))])
 # creating New dataset
-new_dataset = merge_data[,c(2,3,1,4,5)]
+new_dataset = merge_data[,c(2,3,1)]
 new_dataset = arrange(.data = new_dataset,date)
 ```
 
@@ -224,20 +200,11 @@ new_dataset$weekday<- as.factor(new_dataset$weekday)
 
 ```r
 # Adding package "ggplot2" to make plots
-library(ggplot2)
-#making plot
-par(mfrow=c(1,2))
-#weekdays
-weekday_data <- new_dataset[new_dataset$weekday == "weekdays",]
-weekday_data = group_by(weekday_data,interval)
-weekday_mean = summarise(.data = weekday_data ,means = mean(steps,na.rm = TRUE))
-plot(weekday_mean$interval,weekday_mean$means,type ="l",col = "blue",xlab = 'Intervels',ylab = 'Average steps on weekdays',main = 'Weekday Activity Patterns' )
-
-# weekends
-weekend_data <- new_dataset[new_dataset$weekday == "weekends",]
-weekend_data = group_by(weekend_data,interval)
-weekend_mean = summarise(.data = weekend_data ,means = mean(steps,na.rm = TRUE))
-plot(weekend_mean$interval,weekend_mean$means,type ="l",col = "blue",xlab = 'Intervels',ylab = 'Average steps on weekends',main = 'Weekend Activity Patterns' )
+library(lattice)
+new_dataset<- group_by(new_dataset,interval,weekday)
+averages<- summarise(new_dataset,mean = mean(steps))
+xyplot(mean~interval|weekday,data = averages,type = 'l',xlab ='Intervals',ylab = 'Average Step taken'
+        ,main = 'Daily Activity Pattern Weekdays Vs Weekends')
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
